@@ -1,0 +1,292 @@
+
+-- mostrare tutto il contenuto della tabella BIKES
+select * 
+from bikes;
+
+-- mostrare tutto il contenuto della tabella PRESIDENTS
+select * 
+from presidents;
+
+-- mostrare le colonne zip, address, name (in questo ordine) della tabella CUSTOMER
+select Zip, Address, Name 
+from customer;
+
+-- mostrare solo 5 record della tabella ORDERS
+select top 5 *
+from orders; 
+
+-- mostrare la traduzione in italiano dei campi della tabella CUSTOMER
+select Name as Nome,
+	   Address as Indirizzo,
+	   State as Stato,
+	   Zip as CAP,
+	   Phone as Telefono,
+	   Remarks as Note
+from CUSTOMER;
+
+-- aggiungere lo stipendio mensile alla tabella ORGCHART
+select Salary/12 as Salario_Mensile
+from ORGCHART;
+
+-- mostrare l'eta dei dipendenti usando la tabella EMPLOYEE
+select distinct Age
+from EMPLOYEE;
+
+-- aggiungere un'etichetta per classificare se un dipendente è giovane (<= 40 anni) 
+-- oppure vecchio usando la tabella EMPLOYEE
+select *,
+	case 
+	when Age <= 40 then 'Giovane'
+	when Age > 40 then 'Vecchio'
+	end as 'Status'
+from EMPLOYEE;
+
+-- aggiungere un flag che indica se un dipendente è studente usando la tabella EMPLOYEE
+select *,
+	case
+	when Occupation = 'Student' then 1
+	when Occupation <> 'Student' then 0
+	end as 'Flag'
+from EMPLOYEE;
+
+-- mostrare la minima, massima e media età dei dipendenti usando la tabella EMPLOYEE
+select 
+	min(Age) as minima,
+	max(Age) as massima,
+	avg(Age) as media
+from EMPLOYEE ; 
+
+-- contare il numero di record della tabella RESPONSIBILITIES
+select count(distinct Duties) as numero_righe
+from RESPONSIBILITIES;
+
+-- contare il numero di nomi distinti presenti nella tabella RESPONSIBILITIES
+select count(distinct Name) as nomi_distinti
+from RESPONSIBILITIES;
+
+-- mostrare il valore assoluto di un numero
+select abs(HighTemp) 
+from HILOW;
+
+-- mostrare la lunghezza del campo name della tabella SOFTBALL
+select len(Name)
+from SOFTBALL;
+
+-- convertire una stringa in numero
+select cast(FATTURA_DAT as float)
+from FACT_FATTURA;
+
+-- mostrare gli impiegati con il nome che inizia con 'D' partendo dalla tabella EMPLOYEE
+select *
+from EMPLOYEE
+where Name like 'D%';
+
+-- mostrare i nomi con code > 60 della tabella CHARACTERS
+select *
+from CHARACTERS
+where Code >= 60;
+
+-- mostrare stati con higttemp < 0 oppure lowtemp < 100 partendo dalla tabella HILOW
+select *
+from HILOW
+where HighTemp<0 
+OR LowTemp<100;
+
+-- mostrare stati che non soddisfano le condizioni precedenti
+select *
+from HILOW
+where HighTemp>=0 AND LowTemp>=100;
+
+-- mostrare articoli con prezzo compreso tra 0.4 e 0.6 dalla tabella PRICE
+select Item
+from PRICE
+where Wholesale>=0.4 and Wholesale<=0.6;
+
+-- mostrare le quatità ordinate per ogni tipo dalla tabella ORDERS
+select Name, 
+sum(Quantity) as Quantity
+from ORDERS
+group by Name
+order by Quantity;
+
+-- mostrare i dipendenti in ordine di età dalla tabella EMPLOYEE
+select *
+from EMPLOYEE
+order by Age;
+
+-- mostrare numero di record, totale delle quantità e importo delle fatture
+select count(distinct FATTURA_NUM) as numero_records,
+	   sum(QUATITA_NUM) as sum_quantity,
+	   sum(IMPORTO_VAL) as sum_amount
+from FACT_FATTURA
+group by FATTURA_NUM;
+
+-- mostrare numero di record, totale delle quantità e importo delle fatture divise per settimane
+select count(distinct f.FATTURA_NUM) as numero_records,
+	   sum(f.QUATITA_NUM) as sum_quantity,
+	   sum(f.IMPORTO_VAL) as sum_amount,
+	   d.DTTWWDSP as weeks
+from FACT_FATTURA as f
+join DIM_CALENDARIO as d
+ON f.FATTURA_DAT = d.DTTDDATE1
+group by d.DTTWWDSP;
+
+-- mostrare numero di record, totale delle quantità e importo per articolo
+select count(distinct b.FATTURA_NUM) as numero_records,
+	   sum(b.QUATITA_NUM) as sum_quantity,
+	   sum(b.IMPORTO_VAL) as sum_amount,
+	   a.articolo_des as articolo
+from FACT_FATTURA as b
+join DIM_ARTICOLO as a
+on a.ART_MATERIALE_COD = b.ART_MATERIALE_COD
+group by a.articolo_des;
+
+-- mostrare le fatture su articoli che non ho in anagrafica
+SELECT DISTINCT FATTURA_NUM
+FROM FACT_FATTURA
+WHERE ART_MATERIALE_COD IN (
+select distinct(ART_MATERIALE_COD)
+from FACT_FATTURA 
+except
+select distinct(ART_MATERIALE_COD)
+from DIM_ARTICOLO
+);
+
+-- mostrare gli articoli che non sono stati venduti
+SELECT DISTINCT (ARTICOLO_DES)
+FROM DIM_ARTICOLO
+WHERE ART_MATERIALE_COD IN (
+select distinct ART_MATERIALE_COD
+from DIM_ARTICOLO 
+EXCEPT 
+select distinct ART_MATERIALE_COD
+from FACT_FATTURA
+);
+
+-- 1. Trovare matricola e cognome degli impiegati che guadagnano pi`u di 50.
+select matricola, cognome 
+from impiegato
+where stipendio > 50;
+
+-- 2. Trovare cognome e stipendio degli impiegati che lavorano a Roma
+select i.cognome, i.stipendio, d.sede
+from impiegato as i
+join dipartimento as d
+on i.dipartimento = d.codice
+where sede = 'Roma'; 
+
+-- 3. Trovare cognome degli impiegati e nome del dipartimento in cui lavorano
+select i.cognome, d.nome
+from impiegato as i
+full join dipartimento as d
+on i.dipartimento = d.codice;
+
+-- 4. Trovare cognome degli impiegati che sono direttori di dipartimento
+select cognome 
+from impiegato as i
+full join dipartimento as d
+on i.dipartimento = d.codice 
+where i.matricola = d.direttore;
+
+-- 5. Trovare i nomi dei progetti e i cognomi dei responsabili.
+select i.cognome, p.nome
+from impiegato as i
+join progetto as p
+on i.matricola = p.responsabile;
+
+--6. Trovare i nomi dei progetti con bilancio maggiore di 100 e i cognomi degli impiegati che lavorano su di essi.
+select i.cognome, p.nome 
+from impiegato as i
+join partecipazione as part
+on i.matricola = part.impiegato
+join progetto as p
+on part.progetto = p.sigla
+where p.bilancio > 100;
+
+-- 7. Trovare cognome degli impiegati che guadagnano più del loro direttore di dipartimento.
+select i2.cognome
+from impiegato as i1
+join dipartimento as d
+on d.direttore = i1.matricola
+join impiegato as i2
+on i2.dipartimento = d.codice
+where i2.stipendio > i1.stipendio
+
+-- 8. Trovare cognome dei direttori di dipartimento e dei responsabili di progetto.
+select distinct i.cognome, i.matricola
+from impiegato as i
+full join dipartimento as d
+on i.dipartimento = d.codice
+full join progetto as p
+on i.matricola = p.responsabile
+where i.matricola = d.direttore
+or i.matricola = p.responsabile;
+
+-- 9. Trovare nomi dei dipartimenti in cui lavorano impiegati che guadagnano più di 60.
+select d.nome 
+from dipartimento as d
+full join impiegato as i
+on d.codice = i.dipartimento
+where i.stipendio > 60;
+
+-- 10. Trovare nomi dei dipartimenti in cui tutti gli impiegati guadagnano piu di 60
+select d.nome
+from dipartimento as d
+full join impiegato as i
+on d.codice = i.dipartimento
+where i.stipendio > 60;
+
+-- 11. Trovare cognome degli impiegati di stipendio massimo.
+select i.cognome 
+from impiegato as i
+where i.stipendio in 
+(select max(stipendio) from impiegato);
+
+-- 12. Trovare matricola e cognome degli impiegati che non lavorano a nessun progetto.
+select matricola, cognome
+from impiegato
+except
+select i.matricola, i.cognome 
+from impiegato as i
+right join partecipazione as p
+on i.matricola = p.impiegato;
+
+-- 13. Trovare matricola e cognome degli impiegati che lavorano a più di un progetto
+select PIPPO.matricola, PIPPO.cognome, PIPPO.conteggio
+from(
+select i.matricola as matricola, i.cognome as cognome, count(*) as conteggio
+from impiegato as i
+join partecipazione as p 
+on i.matricola = p.impiegato
+group by matricola, cognome
+) as PIPPO
+where PIPPO.conteggio > 1
+;
+
+-- 14. Trovare matricola e cognome degli impiegati che lavorano a un solo progetto.
+select PIPPO.matricola, PIPPO.cognome, PIPPO.conteggio
+from(
+select i.matricola as matricola, i.cognome as cognome, count(*) as conteggio
+from impiegato as i
+join partecipazione as p 
+on i.matricola = p.impiegato
+group by matricola, cognome
+) as PIPPO
+where PIPPO.conteggio = 1
+;
+
+-- 15. Trovare per ciascun dipartimento lo stipendio medio degli impiegati che vi lavorano.
+select avg(stipendio) as stipendio_medio, dipartimento
+from impiegato
+group by dipartimento;
+
+-- 16. Trovare matricola e cognome degli impiegati che hanno lo stipendio superiore almeno del 10% rispetto allo stipendio medio del loro dipartimento.
+select * 
+from impiegato as i 
+where i.stipendio > (
+select 1.1*avg(stipendio) 
+from impiegato
+where i.dipartimento = dipartimento
+);
+
+

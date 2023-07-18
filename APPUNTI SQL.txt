@@ -1,0 +1,132 @@
+SQL 
+Serve per tutte le fasi di back-end, per la parte di ETL e di quadrature per i dati che vengono visualizzati nel front-end.
+Esempio: verifica che i dati sul report/dashboard coincidono con quelli nel database. 
+Nel corso vedremo database SQL Server, ma cambia poco se consideriamo altri db. 
+
+Un database (db) è una collezione organizzata di informazioni che si appoggia su un sistema di management (dbms), 
+i.e. un applicativo che permette di gestire il db, gli utenti e le securities. 
+
+Alcuni esempi di dbms: Oracle, SQL Server, SAP Hana, Oracle MySQL, Netezza, Access
+
+Il db si compone principalmente di tabelle: collezioni di dati correlati mantenuti in un formato strutturato dentro il db.
+In una tabella abbiamo: 
+	- struttura (dimensioni)
+	- record (righe)
+	- chiavi (campi che identificano univocamente un record dentro la tbl (primaria) o in un'altra (esterna))
+	- indici (struttura dati che migliora i tempi di ricerca dei dati) 
+
+Per i software (tipo BO) che lanciano query per ottenere i dati da elaborare nel front-end gli INDICI sono 
+particolarmente utili per ridurre i tempi di caricamento. Per altri (tipo QlikSense, che lavora in memory) sono inutili.
+
+L'SQL non è un linguaggio procedurale (non va da A a B ecc.), ma esistono varianti come il PL_SQL o il T_SQL per 
+esigenze procedurali. 
+Si tratta di un linguaggio che supporta diversi tipi di istruzioni: 
+
+	- DATA DEFINITION LANGUAGE (ddl) 
+		definisce la struttura delle relazioni del db
+			esempio: creare/cancellare tabelle, definire indici e specificare vincoli
+		CREATE/ALTER/DROP TABLE ___ CREATE/DROP INDEX
+
+	- DATA MANIPULATION LANGUAGE (dml)
+		permette di modificare i dati contenuti nel db
+			esempio: manipolo i dati nelle tabelle
+		INSERT INTO Tabella VALUES (value1,value2,...)
+		DELETE FROM Tabella WHERE column_name = some_value (se voglio svuotarla del tutto: TRUNCATE)
+		UPDATE Tabella SET column_name = new_value WHERE column_name = some_value
+
+	- DATA CONTROL LANGUAGE (dcl)
+		gestisce controllo di accessi e permessi degli users
+
+	- QUERY LANGUAGE 
+		interroga il db per recuperare dati 
+
+		SELECT elenco dei campi che voglio recuperare (con aliasing se serve)
+			-> posso manipolare i campi che seleziono (upper, lower, avg, sum, count ecc.)
+			-> con l'opzione DISTINCT ottengo un record per ogni valore distinto
+			-> con CASE WHEN seleziono una cosa quando la condizione è soddisfatta, altrimenti un'altra
+			
+		FROM  una tabella o elenco di tabelle (legate con JOIN / UNION )
+		
+		WHERE prima delle istruzioni opzionali; permette di imporre condizioni sui campi che devono essere
+			verificate per i record che si stanno selezionando. 
+			-> >=,<>,=,<=, exists (se esiste -> ritorna il risultato), between, IN, like
+			-> AND/OR/NOT per usare più condizioni 
+ 
+		GROUP BY se voglio aggregare dei records con caratteristiche comuni;
+			devo specificare i campi su cui viene fatta l'aggregazione e conviene inserire tutti i campi
+			che vengono chiamati nella SELECT per evitare duplicazioni;
+			
+		HAVING condizione sul risultato della GROUP BY (perché non posso usare WHERE dopo) 
+
+		ORDER BY ordinamento del risultato (ASC default) secondo il campo/i specificato/i.
+
+Esiste - tra diversi tipi - uno standard chiamato ANSI SQL. 
+
+Conviene però - in termini di performance - usare il linguaggio nativo del db che si utilizza. 
+
+Quando parliamo di TRANSACTION ci riferiamo ad un insieme di operazioni che, se fatte in modo corretto, 
+producono una variazione permanente nel db. In caso di insuccesso delle operazioni si deve tornare
+allo stato precedente prima della transazione. 
+
+PROPRIETA' di una TRANSACTION: https://it.wikipedia.org/wiki/ACID
+	A: atomicità 
+	C: consistenza
+	I: isolazione
+	D: durabilità 
+
+Operazioni di TRANSACTION:
+	BEGIN - inizia la transazione
+	ROLLBACK - annulla e torna indietro
+	COMMIT - conferma la transazione
+
+Su SQL Server l'AUTOCOMMIT è settato di default a TRUE 
+Su ORACLE invece il default è FALSE: bisogna confermare con COMMIT 
+
+Gestire i valori NULL 
+	- per ORACLE le stringe a lunghezza 0 sono valori NULL, ma non è corretto per gli altri db 
+	- qualunque operazione che coinvolge un valore NULL restituisce FALSE 
+	- serve assegnare un valore al NULL (se campo chiave) per facilitare le cose (cosiddetto VALORE TAPPO) 
+		su ORACLE: NVL
+		su SQL Server: ISNULL(NomeCampo, 'UNSPECIFIED') per sostituire i Null nel NomeCampo con 'UNSPECIFIED'  
+	- per cercare o escludere valori null: IS NULL / IS NOT NULL 
+
+SUBQUERY 
+Si utilizzano per creare degli step logici per la query, che si divide in query principale e sub. 
+Nella sub c'è il primo step logico e vengono selezionati i valori che alimentano il FROM della main query. 
+
+Un altro modo è usare l'operazione WITH T1 AS (select * from ....) SELECT * FROM T1 
+dove la tabella virtuale restituita dalla query in parentesi viene ribattezzata T1. 
+
+JOIN 
+Per interrogare più tabelle con un'unica query devo combinarne i record con un'operazione di JOIN.
+Le JOINs sfruttano i legami tra tabelle (CHIAVI) per combinare i records in modo diverso a seconda del tipo di join 
+utilizzata: 
+		- INNER (default) -> restituisce solo le righe che verificano la join condition 
+		- LEFT / RIGHT -> restituisce anche le righe che non verificano la join condition (della prima tbl se LEFT)
+		- FULL -> combinazione di left + right -> restituisce tutte le righe 
+		- SELF JOIN -> la seconda tabella coincide con la prima 
+		- CROSS JOIN -> prodotto cartesiano tra tutti i records di entrambe le tabelle
+
+Casi particolari: 
+	SELF JOIN -> Di solito si usa per le gerarchie (prodotti, persone, ...) 
+	CROSS JOIN -> Serve a generare records con tutte le combinazioni che mi servono e che sono singolarmente
+			presenti nelle tabelle che su cui faccio la cross join 
+
+
+
+--- considerazioni finali ----- 
+
+In molti casi serve gestire le complessità a livello di db, in quanto il risultato è estendibile anche 
+ad altre situazioni (es. in cui uso software front-end diversi). A differenza dei tools di front-end, i db possono 
+essere migrati da un tipo all'altro, con piccoli adattamenti e usando tool appositi di ETL.
+
+Per inserire dati in una tabella:
+	--> raramente li inserirò uno alla volta con INSERT INTO Tabella VALUES (value1,...)
+	--> di solito inserisco i dati recuperati con una query 
+
+Istruzione MERGE <---> combina le funzioni update e insert [cerca su Microsoft SQL Server]
+	
+Per creare una tabella a partire da una query: CREATE TABLE NomeTabella AS (SELECT .... FROM ...) 
+
+Se invece voglio la tabella virtuale, non fisicamente disponibile: CREATE VIEW NomeVista AS (SELECT ... FROM ...) 
+
